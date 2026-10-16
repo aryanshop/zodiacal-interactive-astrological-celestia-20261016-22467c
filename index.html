@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zodiacal: Interactive Celestial & Astrological Chart Builder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <svg class="logo-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 3v18M3 12h18M7.05 7.05l9.9 9.9M16.95 7.05l-9.9 9.9"/>
+      </svg>
+      <h1>Zodiacal</h1>
+    </div>
+    <div class="header-subtitle">Celestial Mechanics & Ephemeris Visualizer</div>
+    <div class="header-actions">
+      <button id="btn-now" class="btn secondary">Reset to Now</button>
+      <button id="btn-info" class="btn secondary">About Guide</button>
+    </div>
+  </header>
+
+  <main class="app-layout">
+    <!-- Control Panel Sidebar -->
+    <aside class="control-sidebar">
+      <section class="control-card">
+        <h2>Temporal Anchor</h2>
+        <div class="input-group">
+          <label for="input-date">Date</label>
+          <input type="date" id="input-date">
+        </div>
+        <div class="input-group">
+          <label for="input-time">Time (UTC)</label>
+          <input type="time" id="input-time" step="60">
+        </div>
+        <div class="time-scrubber">
+          <label for="range-speed">Time Warp Step: <span id="speed-label">1 Day</span></label>
+          <input type="range" id="range-speed" min="1" max="30" value="1">
+          <div class="scrubber-buttons">
+            <button id="btn-step-back" class="btn icon" title="Step Backward">&#9664;</button>
+            <button id="btn-play" class="btn primary" title="Animate Motion">Play Motion</button>
+            <button id="btn-step-fwd" class="btn icon" title="Step Forward">&#9654;</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-card">
+        <h2>Observer Coordinates</h2>
+        <div class="input-group">
+          <label for="input-lat">Latitude: <span id="lat-val">40.71</span>&deg; N</label>
+          <input type="range" id="input-lat" min="-90" max="90" step="1" value="40.71">
+        </div>
+        <div class="input-group">
+          <label for="input-lon">Longitude: <span id="lon-val">-74.01</span>&deg; W</label>
+          <input type="range" id="input-lon" min="-180" max="180" step="1" value="-74.01">
+        </div>
+        <div class="preset-locations">
+          <button class="btn chip" data-lat="40.71" data-lon="-74.01">New York</button>
+          <button class="btn chip" data-lat="51.51" data-lon="-0.13">London</button>
+          <button class="btn chip" data-lat="35.68" data-lon="139.65">Tokyo</button>
+          <button class="btn chip" data-lat="-33.87" data-lon="151.21">Sydney</button>
+        </div>
+      </section>
+
+      <section class="control-card">
+        <h2>Display Layers</h2>
+        <div class="checkbox-group">
+          <label><input type="checkbox" id="chk-constellations" checked> Constellation Lines</label>
+          <label><input type="checkbox" id="chk-zodiac" checked> Zodiac Wheel</label>
+          <label><input type="checkbox" id="chk-houses" checked> Astrological Houses</label>
+          <label><input type="checkbox" id="chk-aspects" checked> Aspect Geometric Grid</label>
+          <label><input type="checkbox" id="chk-grid" checked> Celestial Coordinates</label>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Central Viewport -->
+    <section class="viewport-section">
+      <div class="viewport-container">
+        <canvas id="sky-canvas"></canvas>
+        <div class="viewport-overlay">
+          <div id="hover-tooltip" class="tooltip hidden"></div>
+          <div class="view-mode-tabs">
+            <button class="tab-btn active" data-view="chart">Natal Chart</button>
+            <button class="tab-btn" data-view="sphere">Celestial Sphere</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Cards Bar -->
+      <div class="summary-bar">
+        <div class="summary-card">
+          <h3>Sun Sign</h3>
+          <p id="summary-sun">--</p>
+        </div>
+        <div class="summary-card">
+          <h3>Moon Sign</h3>
+          <p id="summary-moon">--</p>
+        </div>
+        <div class="summary-card">
+          <h3>Ascendant (Rising)</h3>
+          <p id="summary-asc">--</p>
+        </div>
+        <div class="summary-card">
+          <h3>Active Aspects</h3>
+          <p id="summary-aspects">0 detected</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Details Sidebar -->
+    <aside class="details-sidebar">
+      <div class="tabs-header">
+        <button class="detail-tab active" data-target="tab-ephemeris">Ephemeris</button>
+        <button class="detail-tab" data-target="tab-aspects">Aspects</button>
+        <button class="detail-tab" data-target="tab-almanac">Almanac</button>
+      </div>
+
+      <div class="tab-content active" id="tab-ephemeris">
+        <h3>Planetary Positions</h3>
+        <div id="ephemeris-list" class="data-list"></div>
+      </div>
+
+      <div class="tab-content" id="tab-aspects">
+        <h3>Angular Geometry (Aspects)</h3>
+        <div id="aspects-list" class="data-list"></div>
+      </div>
+
+      <div class="tab-content" id="tab-almanac">
+        <h3>Celestial Almanac</h3>
+        <div class="almanac-box">
+          <p><strong>Julian Date:</strong> <span id="info-jd">--</span></p>
+          <p><strong>Sidereal Time:</strong> <span id="info-lst">--</span></p>
+          <p><strong>Season:</strong> <span id="info-season">--</span></p>
+          <p><strong>Moon Phase:</strong> <span id="info-phase">--</span></p>
+          <div class="phase-visual" id="moon-phase-visual"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- About Modal -->
+  <div id="modal-info" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="btn-close-modal">&times;</button>
+      <h2>About Zodiacal & Sky Mechanics</h2>
+      <p><strong>Zodiacal</strong> is an educational astronomical mechanics calculator designed to render precise ephemeris models entirely within your browser without external servers or proprietary APIs.</p>
+      <h3>Core Features</h3>
+      <ul>
+        <li><strong>Celestial Calculations:</strong> Computes mean and apparent positions of the Sun, Moon, and classical planets using astronomical algorithms based on Julian dates and obliquity of the ecliptic.</li>
+        <li><strong>Dual Perspectives:</strong> Switch between a traditional 360-degree astrological natal chart wheel and an interactive sky projection map.</li>
+        <li><strong>Aspect Geometries:</strong> Automatically detects major geometric alignments (Conjunction, Opposition, Trine, Square, Sextile) with exact angular tolerances.</li>
+      </ul>
+      <p class="disclaimer">All calculations are performed client-side using deterministic trigonometric models for educational and interactive visualization purposes.</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
